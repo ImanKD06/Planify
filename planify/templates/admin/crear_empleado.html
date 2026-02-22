@@ -1,0 +1,25 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+
+<h2>Crear nuevo empleado</h2>
+
+<form method="POST">
+
+    <label>Nombre</label>
+    <input type="text" name="nombre" required>
+
+    <label>Email</label>
+    <input type="email" name="email" required>
+
+    <label>Contraseña</label>
+    <input type="password" name="password" required>
+
+    <label>Puesto</label>
+    <input type="text" name="puesto" required>
+
+    <button type="submit">Crear empleado</button>
+
+</form>
+
+{% endblock %}

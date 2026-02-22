@@ -1,0 +1,45 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+
+<h2>Gestión de turnos</h2>
+
+<h3>Crear turno</h3>
+
+<form method="POST">
+
+    <label>Nombre</label>
+    <input type="text" name="nombre" required>
+
+    <label>Hora inicio</label>
+    <input type="time" name="hora_inicio" required>
+
+    <label>Hora fin</label>
+    <input type="time" name="hora_fin" required>
+
+    <button type="submit">Crear turno</button>
+
+</form>
+
+<hr>
+
+<h3>Lista de turnos</h3>
+
+<table>
+    <tr>
+        <th>Nombre</th>
+        <th>Hora inicio</th>
+        <th>Hora fin</th>
+    </tr>
+
+    {% for turno in turnos %}
+    <tr>
+        <td>{{ turno.nombre }}</td>
+        <td>{{ turno.hora_inicio }}</td>
+        <td>{{ turno.hora_fin }}</td>
+    </tr>
+    {% endfor %}
+
+</table>
+
+{% endblock %}
