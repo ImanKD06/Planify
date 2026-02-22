@@ -64,7 +64,8 @@ def init_db():
 
     conn.commit()
     conn.close()
-    print("✅ Base de datos SQLite creada correctamente.")
+    print(" Base de datos SQLite creada correctamente.")
 
 if __name__ == "__main__":
+
     init_db()
