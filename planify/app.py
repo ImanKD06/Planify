@@ -131,29 +131,41 @@ def listar_empleados():
     return render_template("admin/empleados.html", empleados=empleados)
 
 
-@app.route("/admin/empleados/crear", methods=["GET", "POST"])
+from flask import flash, redirect, url_for, render_template
+
+@app.route('/admin/empleados/crear', methods=['GET', 'POST'])
 def crear_empleado():
 
     if session.get("rol") != "admin":
         return redirect(url_for("home"))
 
-    if request.method == "POST":
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        email = request.form['email']
+        password = generate_password_hash(request.form['password'])
+        puesto = request.form['puesto']
 
-        nombre = request.form["nombre"]
-        email = request.form["email"]
-        password = generate_password_hash(request.form["password"])
-        puesto = request.form["puesto"]
+        rol = "empleado"  
 
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        # Verificar email duplicado
+        cursor.execute("SELECT id FROM usuarios WHERE email = ?", (email,))
+        if cursor.fetchone():
+            flash("Ese correo ya está registrado", "error")
+            conn.close()
+            return redirect(url_for('crear_empleado'))
+
+        # Insertar en usuarios
         cursor.execute("""
             INSERT INTO usuarios (nombre, email, password, rol, primer_login)
-            VALUES (?, ?, ?, ?, 0)
-        """, (nombre, email, password, "empleado"))
+            VALUES (?, ?, ?, ?, 1)
+        """, (nombre, email, password, rol))
 
         usuario_id = cursor.lastrowid
 
+        # Insertar en empleados
         cursor.execute("""
             INSERT INTO empleados (usuario_id, puesto)
             VALUES (?, ?)
@@ -162,9 +174,10 @@ def crear_empleado():
         conn.commit()
         conn.close()
 
-        return redirect(url_for("listar_empleados"))
+        flash("Empleado creado correctamente", "success")
+        return redirect(url_for('listar_empleados'))
 
-    return render_template("admin/crear_empleado.html")
+    return render_template('admin/crear_empleado.html')
 
 @app.route("/admin/empleados/editar/<int:id>", methods=["GET", "POST"])
 def editar_empleado(id):
