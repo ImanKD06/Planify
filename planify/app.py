@@ -77,7 +77,8 @@ def login():
         else:
             return redirect(url_for("empleado_dashboard"))
 
-    return "Email o contraseña incorrectos"
+    flash("Email o contraseña incorrectos", "error")
+    return redirect(url_for("home"))
 
 
 # ---------------- CAMBIAR PASSWORD ----------------
@@ -378,3 +379,4 @@ def logout():
 if __name__ == "__main__":
     crear_admin_inicial()
     app.run(debug=True)
+
