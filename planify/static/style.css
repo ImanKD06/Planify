@@ -1,190 +1,65 @@
-/* -------- RESET -------- */
+/* ================= RESET ================= */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* -------- FUENTE LOGO -------- */
+/* ================= FUENTE LOGO ================= */
 @font-face {
     font-family: 'Nordhin';
     src: url('/static/fonts/Nordhin.ttf') format('truetype');
 }
 
-/* -------- BODY -------- */
+/* ================= BODY ================= */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background-color: #f5f5f7; /* gris Apple */
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background-color: #f5f5f7;
+    min-height: 100vh;
 }
 
-/* -------- CONTENEDOR -------- */
-.login-wrapper {
-    width: 100%;
-    max-width: 380px;
-    text-align: center;
-}
-
-/* -------- LOGO -------- */
+/* ================= LOGO ================= */
 .logo {
     font-family: 'Nordhin', sans-serif;
     font-size: 46px;
     color: #000;
     margin-bottom: 15px;
+    text-align: center;
 }
 
-/* Línea amarilla sutil debajo del logo */
 .logo::after {
     content: "";
     display: block;
     width: 60px;
     height: 4px;
     background-color: #facc15;
-    margin: 12px auto 35px auto;
+    margin: 12px auto 35px;
     border-radius: 2px;
 }
 
-/* -------- TARJETA -------- */
-.login-card {
-    background: #ffffff;
-    padding: 40px 35px;
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-}
-
-/* -------- LABELS -------- */
-.login-card label {
-    display: block;
-    text-align: left;
-    font-size: 13px;
-    font-weight: 500;
-    margin-bottom: 6px;
-    color: #555;
-}
-
-/* -------- INPUTS -------- */
-.login-card input {
-    width: 100%;
-    padding: 14px;
-    margin-bottom: 20px;
-    border-radius: 14px;
-    border: 1px solid #e5e5e5;
-    font-size: 14px;
-    transition: 0.2s ease;
-}
-
-.login-card input:focus {
-    outline: none;
-    border-color: #facc15;
-    box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.25);
-}
-
-/* -------- BOTÓN -------- */
-.login-card button {
-    width: 100%;
-    padding: 14px;
-    border-radius: 14px;
-    border: none;
-    background-color: #facc15;
-    color: #000;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s ease;
-}
-
-.login-card button:hover {
-    background-color: #eab308;
-}
-
-/* -------- REGISTRO -------- */
-.register-link {
-    margin-top: 18px;
-    font-size: 13px;
-    color: #666;
-}
-
-.register-link a {
-    color: #000;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.register-link a:hover {
-    color: #facc15;
-}
-
-/* -------- FOOTER -------- */
-.login-footer {
-    margin-top: 25px;
-    font-size: 12px;
-    color: #999;
-}
-
-/* ===== SUBTITLE ===== */
-.subtitle {
-    font-size: 14px;
-    color: #777;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-/* ===== TITULO INTERNO ===== */
-.login-card h2 {
-    text-align: center;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-/* ===== BOTÓN MEJORADO ===== */
-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #f5c542;
-    border: none;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-button:hover {
-    background-color: #e6b800;
-}
-
-/* ===== INPUTS MÁS LIMPIOS ===== */
-input {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 15px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-/* ===== ADMIN LAYOUT ===== */
-
+/* ================= ADMIN LAYOUT ================= */
 .admin-container {
     display: flex;
     min-height: 100vh;
 }
 
+/* ================= SIDEBAR ================= */
 .sidebar {
     width: 220px;
-    background-color: #1e1e2f;
-    color: white;
-    padding: 20px;
+    background-color: #ffffff;
+    padding: 25px 20px;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
 }
 
 .sidebar h2 {
+    font-family: 'Nordhin', sans-serif;
+    font-size: 28px;
     margin-bottom: 30px;
-    color: #f5c542;
+    text-align: center;
 }
 
 .sidebar ul {
     list-style: none;
-    padding: 0;
 }
 
 .sidebar ul li {
@@ -192,45 +67,647 @@ input {
 }
 
 .sidebar ul li a {
-    color: white;
+    color: #333;
     text-decoration: none;
+    font-weight: 500;
     transition: 0.3s;
 }
 
 .sidebar ul li a:hover {
-    color: #f5c542;
+    color: #facc15;
 }
 
+/* ================= CONTENT ================= */
 .content {
     flex: 1;
     padding: 40px;
     background-color: #f4f4f4;
 }
 
-/* ===== TABLAS ===== */
-
+/* ================= TABLAS ================= */
 table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0 8px;
     background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-table th, table td {
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
+table th,
+table td {
+    padding: 12px 15px;
     text-align: left;
 }
 
 table th {
-    background-color: #f5c542;
+    background-color: #facc15;
+    font-weight: 600;
+}
+
+table tr {
+    background-color: #fff;
 }
 
 .action-links a {
     margin-right: 10px;
     text-decoration: none;
     font-weight: bold;
+    color: #333;
 }
 
 .action-links a:hover {
     opacity: 0.7;
 }
+
+/* ================= FORMULARIOS ================= */
+.form-card {
+    background-color: #ffffff;
+    padding: 30px 25px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.form-card input,
+.form-card select,
+.form-card textarea {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 18px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
+
+.form-card input:focus,
+.form-card select:focus,
+.form-card textarea:focus {
+    outline: none;
+    border-color: #facc15;
+    box-shadow: 0 0 0 3px rgba(250,204,21,0.2);
+}
+
+.form-card button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background-color: #facc15;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.form-card button:hover {
+    background-color: #eab308;
+}
+
+/* ================= TURNOS ================= */
+/* ================= CREAR TURNOS ================= */
+.crear-turno-card {
+    background-color: #ffffff;
+    padding: 30px 25px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    max-width: 600px;
+    margin: 0 auto 30px auto;
+}
+
+.crear-turno-card h2,
+.crear-turno-card h3 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+/* Layout de inputs en fila */
+.turno-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.turno-row .form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.turno-row input,
+.turno-row select {
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
+
+.turno-row input:focus,
+.turno-row select:focus {
+    outline: none;
+    border-color: #facc15;
+    box-shadow: 0 0 0 3px rgba(250,204,21,0.2);
+}
+
+/* Botón crear turno */
+.crear-turno-card button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background-color: #facc15;
+    color: #000;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+    margin-top: 10px;
+}
+
+.crear-turno-card button:hover {
+    background-color: #eab308;
+}
+
+/* Tabla de turnos */
+.shift-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.shift-table th,
+.shift-table td {
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.shift-table th {
+    background-color: #facc15;
+    color: #000;
+    font-weight: 600;
+}
+
+.shift-table tr {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.shift-table td {
+    border: none;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .turno-row {
+        flex-direction: column;
+    }
+}
+
+/* ================= LOGIN ================= */
+/* ================= LOGIN FIX ================= */
+body.login-page {
+    display: flex;
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center;     /* Centra verticalmente */
+    min-height: 100vh;
+    background-color: #f5f5f7;
+    padding: 0;
+    margin: 0;
+}
+
+.login-wrapper {
+    width: 100%;
+    max-width: 380px;
+    padding: 20px;
+    margin: 0 auto; /* asegura centrado horizontal en pantallas pequeñas */
+}
+
+.login-card {
+    background: #ffffff;
+    padding: 35px 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
+
+.login-card label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: #555;
+}
+
+.login-card input {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 18px;
+    border-radius: 14px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+}
+
+.login-card button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    background-color: #000;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.login-card button:hover {
+    background-color: #333;
+}
+
+/* Opcional: logo centrado */
+.logo {
+    text-align: center;
+    margin-bottom: 25px;
+}
+/* ================= LOGIN FIX ================= */
+
+body.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.login-wrapper {
+    width: 100%;
+    max-width: 380px;
+    padding: 20px;
+}
+
+.login-card {
+    background: #ffffff;
+    padding: 35px 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
+
+/* ================= CREAR EMPLEADO ================= */
+
+.crear-empleado-card {
+    background-color: #ffffff;
+    padding: 30px 25px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    max-width: 600px;
+    margin: 0 auto 30px auto;
+}
+
+.crear-empleado-card h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.crear-empleado-card .form-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.crear-empleado-card .form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.crear-empleado-card label {
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #555;
+}
+
+.crear-empleado-card input,
+.crear-empleado-card select {
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
+
+.crear-empleado-card input:focus,
+.crear-empleado-card select:focus {
+    outline: none;
+    border-color: #facc15;
+    box-shadow: 0 0 0 3px rgba(250,204,21,0.2);
+}
+
+.crear-empleado-card button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background-color: #facc15;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.crear-empleado-card button:hover {
+    background-color: #eab308;
+}
+/* ================= ASIGNACIONES ================= */
+
+/* Tarjeta principal de asignaciones */
+.asignaciones-card {
+    background-color: #ffffff;
+    padding: 30px 25px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    max-width: 800px;
+    margin: 30px auto; /* centra horizontalmente */
+}
+
+/* Títulos */
+.asignaciones-card h2,
+.asignaciones-card h3 {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Formulario de asignaciones */
+.asignaciones-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+/* Labels */
+.asignaciones-card label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+/* Inputs y selects */
+.asignaciones-card input,
+.asignaciones-card select {
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
+
+.asignaciones-card input:focus,
+.asignaciones-card select:focus {
+    outline: none;
+    border-color: #facc15;
+    box-shadow: 0 0 0 3px rgba(250,204,21,0.2);
+}
+
+/* Botón de asignar */
+.asignaciones-card button {
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background-color: #facc15;
+    color: #000;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.asignaciones-card button:hover {
+    background-color: #eab308;
+}
+
+/* Tabla de asignaciones */
+.asignaciones-card table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.asignaciones-card th,
+.asignaciones-card td {
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.asignaciones-card th {
+    background-color: #facc15;
+    color: #000;
+    font-weight: 600;
+}
+
+.asignaciones-card tr {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.asignaciones-card td {
+    border: none;
+}
+
+.asignaciones-card .action-links a {
+    text-decoration: none;
+    font-weight: bold;
+    color: #333;
+    transition: 0.2s;
+}
+
+.asignaciones-card .action-links a:hover {
+    opacity: 0.7;
+}
+
+/* Flex para filtros y filas de formulario */
+.asignaciones-card .form-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.asignaciones-card .form-row .form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .asignaciones-card {
+        padding: 20px;
+        margin: 20px auto;
+    }
+
+    .asignaciones-card .form-row {
+        flex-direction: column;
+    }
+}
+
+/* ================= EDITAR EMPLEADO ================= */
+.editar-empleado-card {
+    background-color: #ffffff;
+    padding: 30px 25px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    max-width: 600px;
+    margin: 50px auto; /* centra la tarjeta */
+    transition: 0.3s ease;
+}
+
+.editar-empleado-card h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    text-align: center;
+    color: #333;
+}
+
+/* Layout de filas de formulario */
+.editar-empleado-card .form-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.editar-empleado-card .form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Labels */
+.editar-empleado-card label {
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #555;
+}
+
+/* Inputs y selects */
+.editar-empleado-card input,
+.editar-empleado-card select {
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
+
+.editar-empleado-card input:focus,
+.editar-empleado-card select:focus {
+    outline: none;
+    border-color: #facc15;
+    box-shadow: 0 0 0 3px rgba(250,204,21,0.2);
+}
+
+/* Botones */
+.editar-empleado-card .btn-update,
+.editar-empleado-card .btn-cancel {
+    width: 48%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+    margin-top: 10px;
+}
+
+.editar-empleado-card .btn-update {
+    background-color: #facc15;
+    color: #000;
+}
+
+.editar-empleado-card .btn-update:hover {
+    background-color: #eab308;
+}
+
+.editar-empleado-card .btn-cancel {
+    background-color: #ddd;
+    color: #333;
+}
+
+.editar-empleado-card .btn-cancel:hover {
+    background-color: #bbb;
+}
+
+/* Flex para botones */
+.editar-empleado-card .form-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .editar-empleado-card {
+        padding: 20px;
+        margin: 30px auto;
+    }
+
+    .editar-empleado-card .form-actions {
+        flex-direction: column;
+    }
+
+    .editar-empleado-card .btn-update,
+    .editar-empleado-card .btn-cancel {
+        width: 100%;
+    }
+}.alert {
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.alert.success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.alert.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.alert {
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.alert.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.alert.success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
