@@ -1,0 +1,45 @@
+{% extends 'empleado/layout.html' %}
+
+{% block title %}Solicitudes{% endblock %}
+
+{% block content %}
+
+<div class="empleado-card">
+    <h2>Enviar solicitud</h2>
+
+    <form method="POST">
+        <label>Tipo de solicitud</label>
+        <select name="tipo" required>
+            <option value="permiso">Permiso</option>
+            <option value="cambio_turno">Cambio de turno</option>
+            <option value="ausencia">Ausencia</option>
+        </select>
+
+        <label>Comentario</label>
+        <textarea name="comentario" rows="3" placeholder="Opcional"></textarea>
+
+        <button type="submit">Enviar</button>
+    </form>
+</div>
+
+<div class="empleado-card">
+    <h2>Mis solicitudes</h2>
+
+    <table class="empleado-table">
+        <tr>
+            <th>Tipo</th>
+            <th>Comentario</th>
+            <th>Estado</th>
+        </tr>
+
+        {% for s in solicitudes %}
+        <tr>
+            <td>{{ s['tipo'] }}</td>
+            <td>{{ s['comentario'] or '-' }}</td>
+            <td>{{ s['estado'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
