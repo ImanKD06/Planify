@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, url_for, flash
+import logging
+logging.basicConfig(level=logging.DEBUG)
 import os
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -16,7 +18,6 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
-
 # ---------------- CREAR TABLAS ----------------
 def init_db():
     conn = get_db_connection()
@@ -503,13 +504,19 @@ def logout():
 
 
 if __name__ == "__main__":
-    # Asegurarse de que el directorio para la DB exista
     os.makedirs("/opt/render/data", exist_ok=True)
 
-    # Inicializar la DB y crear admin si no existe
+    # Inicializar DB y crear admin
     init_db()
     crear_admin_inicial()
 
-    # Ejecutar la app en host y puerto que Render requiere
+    # DEBUG: mostrar tablas existentes
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    print("Tablas en la DB:", cursor.fetchall())
+    conn.close()
+
+    # Ejecutar app
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
 
