@@ -20,85 +20,90 @@ def get_db_connection():
 # ---------------- CREAR TABLAS ----------------
 def init_db():
     conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        primer_login INTEGER DEFAULT 1,
-        nombre TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        rol TEXT NOT NULL CHECK (rol IN ('admin','empleado'))
-    )
-    """)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS empleados (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        usuario_id INTEGER NOT NULL UNIQUE,
-        puesto TEXT,
-        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-    )
-    """)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS turnos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        hora_inicio TEXT NOT NULL,
-        hora_fin TEXT NOT NULL
-    )
-    """)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS asignaciones (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        empleado_id INTEGER NOT NULL,
-        turno_id INTEGER NOT NULL,
-        fecha TEXT NOT NULL,
-        FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE,
-        FOREIGN KEY (turno_id) REFERENCES turnos(id) ON DELETE CASCADE
-    )
-    """)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS solicitudes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        empleado_id INTEGER NOT NULL,
-        tipo TEXT NOT NULL,
-        comentario TEXT,
-        estado TEXT DEFAULT 'pendiente' CHECK (estado IN ('pendiente','aprobada','rechazada')),
-        FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
-    )
-    """)
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            primer_login INTEGER DEFAULT 1,
+            nombre TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            rol TEXT NOT NULL CHECK (rol IN ('admin','empleado'))
+        )
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS empleados (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL UNIQUE,
+            puesto TEXT,
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+        )
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS turnos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            hora_inicio TEXT NOT NULL,
+            hora_fin TEXT NOT NULL
+        )
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS asignaciones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            empleado_id INTEGER NOT NULL,
+            turno_id INTEGER NOT NULL,
+            fecha TEXT NOT NULL,
+            FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE,
+            FOREIGN KEY (turno_id) REFERENCES turnos(id) ON DELETE CASCADE
+        )
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS solicitudes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            empleado_id INTEGER NOT NULL,
+            tipo TEXT NOT NULL,
+            comentario TEXT,
+            estado TEXT DEFAULT 'pendiente' CHECK (estado IN ('pendiente','aprobada','rechazada')),
+            FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
+        )
+        """)
+        conn.commit()
+    finally:
+        conn.close()
 
 # ---------------- CREAR ADMIN INICIAL ----------------
 def crear_admin_inicial():
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM usuarios WHERE rol = ?", ("admin",))
-    admin = cursor.fetchone()
-    if not admin:
-        password_temporal = "Admin123!"
-        password_hash = generate_password_hash(password_temporal)
-        cursor.execute("""
-            INSERT INTO usuarios (nombre, email, password, rol, primer_login)
-            VALUES (?, ?, ?, ?, ?)
-        """, ("Admin", "admin@empresa.com", password_hash, "admin", 1))
-        conn.commit()
-        print("Admin inicial creado: admin@empresa.com / Admin123!")
-    conn.close()
-    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM usuarios WHERE rol = ?", ("admin",))
+        admin = cursor.fetchone()
+        if not admin:
+            password_temporal = "Admin123!"
+            password_hash = generate_password_hash(password_temporal)
+            cursor.execute("""
+                INSERT INTO usuarios (nombre, email, password, rol, primer_login)
+                VALUES (?, ?, ?, ?, ?)
+            """, ("Admin", "admin@empresa.com", password_hash, "admin", 1))
+            conn.commit()
+            print("Admin inicial creado: admin@empresa.com / Admin123!")
+    except sqlite3.Error as e:
+        print("Error creando admin inicial:", e)
+    finally:
+        conn.close()
 
-    
+# ---------------- MANEJO DE ERRORES ----------------
+@app.errorhandler(500)
+def internal_error(error):
+    return f"Error interno del servidor: {error}", 500
 
 # ---------------- LOGIN ----------------
-
 @app.route("/", methods=["GET", "POST"])
 def home():
     if request.method == "POST":
         return login()
     return render_template("login.html")
-
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -110,13 +115,12 @@ def login():
         return redirect(url_for("home"))
 
     conn = get_db_connection()
-    usuario = conn.execute(
-        "SELECT * FROM usuarios WHERE email = ?", (email,)
-    ).fetchone()
-    conn.close()
+    try:
+        usuario = conn.execute("SELECT * FROM usuarios WHERE email = ?", (email,)).fetchone()
+    finally:
+        conn.close()
 
     if usuario and check_password_hash(usuario["password"], password):
-
         session.clear()
         session["usuario_id"] = usuario["id"]
         session["rol"] = usuario["rol"]
@@ -133,30 +137,25 @@ def login():
     flash("Email o contraseña incorrectos", "error")
     return redirect(url_for("home"))
 
-
-# ---------------- CAMBIAR CONTRSEÑA (PRIMER LOGIN) ----------------
-
+# ---------------- CAMBIAR CONTRASEÑA ----------------
 @app.route("/cambiar-password", methods=["GET", "POST"])
 def cambiar_password():
-
     if "usuario_id" not in session:
         return redirect(url_for("home"))
 
     if request.method == "POST":
         nueva_password = generate_password_hash(request.form["password"])
-
         conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            UPDATE usuarios 
-            SET password=?, primer_login=0 
-            WHERE id=?
-        """, (nueva_password, session["usuario_id"]))
-
-        conn.commit()
-        conn.close()
-
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE usuarios 
+                SET password=?, primer_login=0 
+                WHERE id=?
+            """, (nueva_password, session["usuario_id"]))
+            conn.commit()
+        finally:
+            conn.close()
         return redirect(url_for("home"))
 
     return render_template("cambiar_password.html")
@@ -631,4 +630,5 @@ if __name__ == "__main__":
     init_db()
     crear_admin_inicial()
     app.run(debug=True)
+
 
