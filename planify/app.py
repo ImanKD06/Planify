@@ -6,6 +6,9 @@ from datetime import date, timedelta
 from time import time
 
 app = Flask(__name__)
+init_db()
+crear_admin_inicial()
+
 app.secret_key = "super_secret_key"
 
 # ---------------- CONEXIÓN Y BASE DE DATOS ----------------
@@ -627,8 +630,6 @@ def logout():
 # ---------------- RUN APP ----------------
 
 if __name__ == "__main__":
-    init_db()
-    crear_admin_inicial()
     app.run(debug=True)
 
 
