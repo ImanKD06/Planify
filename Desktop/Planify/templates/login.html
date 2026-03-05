@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Planify - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-page">
+
+<div class="login-wrapper">
+
+    <div class="logo">
+        Planify
+    </div>
+
+    <div class="login-card">
+
+        <!--  MENSAJES DE ERROR / ÉXITO -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert {{ category }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('login') }}" method="POST">
+
+            <label>Email</label>
+            <input type="email" name="email" required>
+
+            <label>Contraseña</label>
+            <input type="password" name="password" required>
+
+            <button type="submit">Iniciar sesión</button>
+
+        </form>
+
+    </div>
+
+    <div class="login-footer">
+        © 2026 Planify
+    </div>
+
+</div>
+
+</body>
+</html>

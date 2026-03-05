@@ -1,0 +1,55 @@
+{% extends 'empleado/layout.html' %}
+
+{% block title %}Mis turnos{% endblock %}
+
+{% block content %}
+
+<div class="empleado-card">
+    <h2>Mis turnos</h2>
+
+    <form method="GET" class="form-row">
+        <div class="form-group">
+            <label>Desde:</label>
+            <input type="date" name="desde" value="{{ inicio }}">
+        </div>
+        <div class="form-group">
+            <label>Hasta:</label>
+            <input type="date" name="hasta" value="{{ fin }}">
+        </div>
+        <div class="form-group">
+            <label>&nbsp;</label>
+            <button type="submit">Filtrar</button>
+        </div>
+    </form>
+</div>
+
+<div class="empleado-card">
+    <h2>Del {{ inicio }} al {{ fin }}</h2>
+
+    <table class="empleado-table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Turno</th>
+                <th>Inicio</th>
+                <th>Fin</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if asignaciones %}
+                {% for a in asignaciones %}
+                <tr>
+                    <td>{{ a['fecha'] }}</td>
+                    <td>{{ a['turno'] }}</td>
+                    <td>{{ a['hora_inicio'] }}</td>
+                    <td>{{ a['hora_fin'] }}</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="4" style="text-align:center;">No tienes turnos asignados</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

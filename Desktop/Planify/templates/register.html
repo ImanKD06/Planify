@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head> 
+    <title>Planify - Registro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="login-wrapper">
+
+    <div class="logo">
+        Planify
+    </div>
+
+    <div class="login-card">
+
+        <form method="POST">
+            <label>Nombre</label>
+            <input type="text" name="nombre" required>
+
+            <label>Email</label>
+            <input type="email" name="email" required>
+
+            <label>Contraseña</label>
+            <input type="password" name="password" required>
+
+            <label>Puesto</label>
+            <input type="text" name="puesto" required>
+
+            <button type="submit">Crear cuenta</button>
+        </form>
+
+        <div class="register-link">
+            ¿Ya tienes cuenta?
+            <a href="{{ url_for('home') }}">Iniciar sesión</a>
+        </div>
+
+    </div>
+
+    <div class="login-footer">
+        © 2026 Planify
+    </div>
+
+</div>
+
+</body>
+</html>

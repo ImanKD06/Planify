@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel Admin - Planify</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="admin-container">
+
+    <aside class="sidebar">
+        <h2>Planify</h2>
+        <ul>
+            <li><a href="{{ url_for('listar_empleados') }}">Empleados</a></li>
+            <li><a href="{{ url_for('crear_empleado') }}">Crear empleado</a></li>
+            <li><a href="{{ url_for('gestionar_turnos') }}">Turnos</a></li>
+            <li><a href="{{ url_for('gestionar_asignaciones') }}">Asignaciones</a></li>
+            <li><a href="{{ url_for('logout') }}">Cerrar sesión</a></li>
+        </ul>
+    </aside>
+
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert {{ category }}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+<h2>Panel Administrador</h2>
+
+<p><strong>Total empleados:</strong> {{ total_empleados }}</p>
+<p><strong>Turnos esta semana:</strong> {{ turnos_semana }}</p>
+<p><strong>Solicitudes pendientes:</strong> {{ solicitudes_pendientes }}</p>
+
+<hr>
+
+<a href="{{ url_for('listar_empleados') }}">Gestionar empleados</a>
+<a href="{{ url_for('logout') }}">Cerrar sesión</a>
