@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.secret_key = "super_secret_key"
 
 # ---------------- CONEXIÓN Y BASE DE DATOS ----------------
-DB_PATH = os.path.join(os.path.dirname(__file__), "database.db")
+DB_PATH = os.path.join("/tmp", "database.db")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -630,5 +630,6 @@ if __name__ == "__main__":
     init_db()
     crear_admin_inicial()
     app.run(debug=True)
+
 
 
