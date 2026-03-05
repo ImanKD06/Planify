@@ -1,47 +1,23 @@
 from flask import Flask, render_template, request, redirect, session, url_for, flash
+import os
 import sqlite3
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, timedelta
 from time import time
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key"  
+app.secret_key = "super_secret_key"
 
-# ---------------- CONEXIÓN BD ----------------
+# ---------------- CONEXIÓN Y BASE DE DATOS ----------------
+DB_PATH = os.path.join(os.path.dirname(__file__), "database.db")
 
 def get_db_connection():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
-# ---------------- CREAR ADMIN INICIAL ----------------
-
-def crear_admin_inicial():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM usuarios WHERE rol = ?", ("admin",))
-    admin = cursor.fetchone()
-
-    if not admin:
-        password_temporal = "Admin123!"
-        password_hash = generate_password_hash(password_temporal)
-
-        cursor.execute("""
-            INSERT INTO usuarios (nombre, email, password, rol, primer_login)
-            VALUES (?, ?, ?, ?, ?)
-        """, ("Admin", "admin@empresa.com", password_hash, "admin", 1))
-
-        conn.commit()
-        print(" Admin inicial creado")
-        print(" Email: admin@empresa.com")
-        print(" Contraseña temporal:", password_temporal)
-
-    conn.close()
-
-# ---------------- INICIALIZAR BASE DE DATOS ----------------
-
+# ---------------- CREAR TABLAS ----------------
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -49,23 +25,21 @@ def init_db():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        primer_login INTEGER DEFAULT 1,
         nombre TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        rol TEXT NOT NULL,
-        primer_login INTEGER DEFAULT 1
+        rol TEXT NOT NULL CHECK (rol IN ('admin','empleado'))
     )
     """)
-
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS empleados (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        usuario_id INTEGER NOT NULL,
-        puesto TEXT NOT NULL,
-        FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE
+        usuario_id INTEGER NOT NULL UNIQUE,
+        puesto TEXT,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
     )
     """)
-
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS turnos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,69 +48,48 @@ def init_db():
         hora_fin TEXT NOT NULL
     )
     """)
-
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS asignaciones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         empleado_id INTEGER NOT NULL,
         turno_id INTEGER NOT NULL,
         fecha TEXT NOT NULL,
-        FOREIGN KEY (empleado_id) REFERENCES empleados (id) ON DELETE CASCADE,
-        FOREIGN KEY (turno_id) REFERENCES turnos (id) ON DELETE CASCADE
+        FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE,
+        FOREIGN KEY (turno_id) REFERENCES turnos(id) ON DELETE CASCADE
     )
     """)
-
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS solicitudes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         empleado_id INTEGER NOT NULL,
         tipo TEXT NOT NULL,
         comentario TEXT,
-        estado TEXT DEFAULT 'pendiente',
-        FOREIGN KEY (empleado_id) REFERENCES empleados (id) ON DELETE CASCADE
+        estado TEXT DEFAULT 'pendiente' CHECK (estado IN ('pendiente','aprobada','rechazada')),
+        FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
     )
     """)
-
     conn.commit()
     conn.close()
 
-# ---------------- EJECUTAR AL INICIAR ----------------
-
-# Esto se ejecuta siempre, también en Render
-init_db()
-crear_admin_inicial()
-
-# ---------------- RUN APP ----------------
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
 # ---------------- CREAR ADMIN INICIAL ----------------
-
 def crear_admin_inicial():
     conn = get_db_connection()
     cursor = conn.cursor()
-
     cursor.execute("SELECT * FROM usuarios WHERE rol = ?", ("admin",))
     admin = cursor.fetchone()
-
     if not admin:
         password_temporal = "Admin123!"
         password_hash = generate_password_hash(password_temporal)
-
         cursor.execute("""
             INSERT INTO usuarios (nombre, email, password, rol, primer_login)
             VALUES (?, ?, ?, ?, ?)
         """, ("Admin", "admin@empresa.com", password_hash, "admin", 1))
-
         conn.commit()
-
-        print(" Admin inicial creado")
-        print(" Email: admin@empresa.com")
-        print(" Contraseña temporal:", password_temporal)
-
+        print("Admin inicial creado: admin@empresa.com / Admin123!")
     conn.close()
+    
 
+    
 
 # ---------------- LOGIN ----------------
 
@@ -675,6 +628,7 @@ def logout():
 # ---------------- RUN APP ----------------
 
 if __name__ == "__main__":
+    init_db()
     crear_admin_inicial()
     app.run(debug=True)
 
