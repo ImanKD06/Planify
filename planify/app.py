@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.secret_key = "super_secret_key"
 
 # ---------------- CONEXIÓN Y BASE DE DATOS ----------------
-DB_PATH = os.path.join("/tmp", "database.db")
+DB_PATH = os.path.join("/opt/render/data", "database.db")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -507,4 +507,13 @@ crear_admin_inicial()
 
 # ---------------- RUN APP ----------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Asegurarse de que el directorio para la DB exista
+    os.makedirs("/opt/render/data", exist_ok=True)
+
+    # Crear tablas y admin inicial
+    init_db()
+    crear_admin_inicial()
+
+    # Ejecutar app en el host y puerto que Render requiere
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+
