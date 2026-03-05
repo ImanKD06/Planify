@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request, redirect, session, url_for, flash
 import logging
-logging.basicConfig(level=logging.DEBUG)
 import os
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, timedelta
 from time import time
+
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key"
@@ -18,11 +19,13 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
 # ---------------- CREAR TABLAS ----------------
 def init_db():
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
+
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,6 +36,7 @@ def init_db():
             rol TEXT NOT NULL CHECK (rol IN ('admin','empleado'))
         )
         """)
+
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS empleados (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,6 +45,7 @@ def init_db():
             FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
         )
         """)
+
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS turnos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,6 +54,7 @@ def init_db():
             hora_fin TEXT NOT NULL
         )
         """)
+
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS asignaciones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,16 +65,19 @@ def init_db():
             FOREIGN KEY (turno_id) REFERENCES turnos(id) ON DELETE CASCADE
         )
         """)
+
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS solicitudes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             empleado_id INTEGER NOT NULL,
             tipo TEXT NOT NULL,
             comentario TEXT,
-            estado TEXT DEFAULT 'pendiente' CHECK (estado IN ('pendiente','aprobada','rechazada')),
+            estado TEXT DEFAULT 'pendiente'
+                CHECK (estado IN ('pendiente','aprobada','rechazada')),
             FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
         )
         """)
+
         conn.commit()
     finally:
         conn.close()
@@ -78,7 +87,7 @@ def crear_admin_inicial():
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM usuarios WHERE rol = ?", ("admin",))
+        cursor.execute("SELECT id FROM usuarios WHERE rol = 'admin'")
         if not cursor.fetchone():
             password_hash = generate_password_hash("Admin123!")
             cursor.execute("""
@@ -86,9 +95,14 @@ def crear_admin_inicial():
                 VALUES (?, ?, ?, ?, 1)
             """, ("Admin", "admin@empresa.com", password_hash, "admin"))
             conn.commit()
-            print("Admin inicial creado: admin@empresa.com / Admin123!")
+            print("Admin inicial creado correctamente")
     finally:
         conn.close()
+
+# 🔥 IMPORTANTE: ESTO SE EJECUTA SIEMPRE (también en Render con gunicorn)
+os.makedirs("/opt/render/data", exist_ok=True)
+init_db()
+crear_admin_inicial()
 
 # ---------------- MANEJO DE ERRORES ----------------
 @app.errorhandler(500)
@@ -106,13 +120,16 @@ def home():
 def login():
     email = request.form.get("email")
     password = request.form.get("password")
+
     if not email or not password:
         flash("Todos los campos son obligatorios")
         return redirect(url_for("home"))
 
     conn = get_db_connection()
     try:
-        usuario = conn.execute("SELECT * FROM usuarios WHERE email = ?", (email,)).fetchone()
+        usuario = conn.execute(
+            "SELECT * FROM usuarios WHERE email = ?", (email,)
+        ).fetchone()
     finally:
         conn.close()
 
@@ -132,6 +149,7 @@ def login():
 
     flash("Email o contraseña incorrectos", "error")
     return redirect(url_for("home"))
+
 
 # ---------------- CAMBIAR CONTRASEÑA ----------------
 @app.route("/cambiar-password", methods=["GET", "POST"])
@@ -502,21 +520,7 @@ def logout():
     session.clear()
     return redirect(url_for("home"))
 
-
 if __name__ == "__main__":
-    os.makedirs("/opt/render/data", exist_ok=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
-    # Inicializar DB y crear admin
-    init_db()
-    crear_admin_inicial()
-
-    # DEBUG: mostrar tablas existentes
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    print("Tablas en la DB:", cursor.fetchall())
-    conn.close()
-
-    # Ejecutar app
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
 
