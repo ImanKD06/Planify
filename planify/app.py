@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from time import time
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key"  
+app.secret_key = "super_secret_key"
 
 
 # ---------------- CONEXIÓN BD ----------------
@@ -23,23 +23,24 @@ def crear_admin_inicial():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM usuarios WHERE rol = ?", ("admin",))
+    cursor.execute("SELECT * FROM usuarios WHERE rol='admin'")
     admin = cursor.fetchone()
 
     if not admin:
+
         password_temporal = "Admin123!"
         password_hash = generate_password_hash(password_temporal)
 
         cursor.execute("""
-            INSERT INTO usuarios (nombre, email, password, rol, primer_login)
-            VALUES (?, ?, ?, ?, ?)
-        """, ("Admin", "admin@empresa.com", password_hash, "admin", 1))
+            INSERT INTO usuarios (nombre,email,password,rol,primer_login)
+            VALUES (?,?,?,?,1)
+        """, ("Admin", "admin@empresa.com", password_hash, "admin"))
 
         conn.commit()
 
-        print(" Admin inicial creado")
-        print(" Email: admin@empresa.com")
-        print(" Contraseña temporal:", password_temporal)
+        print("Admin inicial creado")
+        print("Email: admin@empresa.com")
+        print("Password:", password_temporal)
 
     conn.close()
 
@@ -55,17 +56,21 @@ def home():
 
 @app.route("/login", methods=["POST"])
 def login():
+
     email = request.form.get("email")
     password = request.form.get("password")
 
     if not email or not password:
-        flash("Todos los campos son obligatorios")
+        flash("Todos los campos son obligatorios", "error")
         return redirect(url_for("home"))
 
     conn = get_db_connection()
+
     usuario = conn.execute(
-        "SELECT * FROM usuarios WHERE email = ?", (email,)
+        "SELECT * FROM usuarios WHERE email=?",
+        (email,)
     ).fetchone()
+
     conn.close()
 
     if usuario and check_password_hash(usuario["password"], password):
@@ -87,7 +92,7 @@ def login():
     return redirect(url_for("home"))
 
 
-# ---------------- CAMBIAR CONTRSEÑA (PRIMER LOGIN) ----------------
+# ---------------- CAMBIAR PASSWORD ----------------
 
 @app.route("/cambiar-password", methods=["GET", "POST"])
 def cambiar_password():
@@ -96,16 +101,16 @@ def cambiar_password():
         return redirect(url_for("home"))
 
     if request.method == "POST":
-        nueva_password = generate_password_hash(request.form["password"])
+
+        nueva = generate_password_hash(request.form["password"])
 
         conn = get_db_connection()
-        cursor = conn.cursor()
 
-        cursor.execute("""
-            UPDATE usuarios 
-            SET password=?, primer_login=0 
+        conn.execute("""
+            UPDATE usuarios
+            SET password=?, primer_login=0
             WHERE id=?
-        """, (nueva_password, session["usuario_id"]))
+        """, (nueva, session["usuario_id"]))
 
         conn.commit()
         conn.close()
@@ -115,7 +120,7 @@ def cambiar_password():
     return render_template("cambiar_password.html")
 
 
-# ---------------- EMPLEADOS (ADMIN) ----------------
+# ---------------- EMPLEADOS ----------------
 
 @app.route("/admin/empleados")
 def listar_empleados():
@@ -124,64 +129,62 @@ def listar_empleados():
         return redirect(url_for("home"))
 
     conn = get_db_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT e.id, u.nombre, u.email, e.puesto 
+    empleados = conn.execute("""
+        SELECT e.id,u.nombre,u.email,e.puesto
         FROM empleados e
-        JOIN usuarios u ON e.usuario_id = u.id
-    """)
+        JOIN usuarios u ON e.usuario_id=u.id
+    """).fetchall()
 
-    empleados = cursor.fetchall()
     conn.close()
 
     return render_template("admin/empleados.html", empleados=empleados)
 
 
-@app.route('/admin/empleados/crear', methods=['GET', 'POST'])
+# ---------------- CREAR EMPLEADO ----------------
+
+@app.route("/admin/empleados/crear", methods=["GET", "POST"])
 def crear_empleado():
 
     if session.get("rol") != "admin":
         return redirect(url_for("home"))
 
-    if request.method == 'POST':
-        nombre = request.form['nombre']
-        email = request.form['email']
-        
-        password = generate_password_hash(request.form['password'])
-        puesto = request.form['puesto']
+    if request.method == "POST":
 
-        rol = "empleado"  
+        nombre = request.form["nombre"]
+        email = request.form["email"]
+        puesto = request.form["puesto"]
+
+        password = generate_password_hash(request.form["password"])
 
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT id FROM usuarios WHERE email = ?", (email,))
+        cursor.execute("SELECT id FROM usuarios WHERE email=?", (email,))
+
         if cursor.fetchone():
-            flash("Ese correo ya está registrado", "error")
-            conn.close()
-            return redirect(url_for('crear_empleado'))
+            flash("Ese correo ya existe", "error")
+            return redirect(url_for("crear_empleado"))
 
         cursor.execute("""
-            INSERT INTO usuarios (nombre, email, password, rol, primer_login)
-            VALUES (?, ?, ?, ?, 1)
-        """, (nombre, email, password, rol))
+            INSERT INTO usuarios (nombre,email,password,rol,primer_login)
+            VALUES (?,?,?,?,1)
+        """, (nombre, email, password, "empleado"))
 
         usuario_id = cursor.lastrowid
 
         cursor.execute("""
-            INSERT INTO empleados (usuario_id, puesto)
-            VALUES (?, ?)
+            INSERT INTO empleados (usuario_id,puesto)
+            VALUES (?,?)
         """, (usuario_id, puesto))
 
         conn.commit()
         conn.close()
 
-        flash("Empleado creado correctamente", "success")
-        return redirect(url_for('listar_empleados'))
+        flash("Empleado creado", "success")
+        return redirect(url_for("listar_empleados"))
 
-    return render_template('admin/crear_empleado.html')
-
+    return render_template("admin/crear_empleado.html")
 
 # ---------------- EDITAR EMPLEADO ----------------
 
@@ -258,44 +261,28 @@ def gestionar_turnos():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Crear turno
     if request.method == "POST":
+
         nombre = request.form["nombre"]
         hora_inicio = request.form["hora_inicio"]
         hora_fin = request.form["hora_fin"]
+        color = request.form.get("color", "#3788d8")
+        tipo = request.form["tipo"]
 
         cursor.execute("""
-            INSERT INTO turnos (nombre, hora_inicio, hora_fin)
-            VALUES (?, ?, ?)
-        """, (nombre, hora_inicio, hora_fin))
+            INSERT INTO turnos (nombre,hora_inicio,hora_fin,color)
+            VALUES (?,?,?,?)
+        """, (nombre + " (" + tipo + ")", hora_inicio, hora_fin, color))
+
         conn.commit()
 
-    cursor.execute("SELECT * FROM turnos")
-    turnos = cursor.fetchall()
-
-    turnos_con_empleados = []
-    for t in turnos:
-        cursor.execute("""
-            SELECT COUNT(a.id) AS total_empleados
-            FROM asignaciones a
-            JOIN empleados e ON a.empleado_id = e.id
-            WHERE a.turno_id = ?
-        """, (t["id"],))
-        count = cursor.fetchone()["total_empleados"]
-        turnos_con_empleados.append({
-            "id": t["id"],
-            "nombre": t["nombre"],
-            "hora_inicio": t["hora_inicio"],
-            "hora_fin": t["hora_fin"],
-            "total_empleados": count
-        })
+    turnos = cursor.execute("SELECT * FROM turnos").fetchall()
 
     conn.close()
 
-    return render_template("admin/turnos.html", turnos=turnos_con_empleados)
+    return render_template("admin/turnos.html", turnos=turnos)
 
-
-@app.route("/admin/turnos/eliminar/<int:id>")
+@app.route("/admin/turnos/eliminar/<int:id>", methods=["POST"])
 def eliminar_turno(id):
     if session.get("rol") != "admin":
         return redirect(url_for("home"))
@@ -303,11 +290,12 @@ def eliminar_turno(id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("DELETE FROM turnos WHERE id=?", (id,))
+    cursor.execute("DELETE FROM turnos WHERE id = ?", (id,))
     conn.commit()
     conn.close()
 
     return redirect(url_for("gestionar_turnos"))
+
 
 
 # ---------------- ASIGNACIONES ----------------
@@ -322,21 +310,33 @@ def gestionar_asignaciones():
     cursor = conn.cursor()
 
     if request.method == "POST":
+
         empleado_id = request.form["empleado_id"]
         turno_id = request.form["turno_id"]
-        fecha = request.form["fecha"]
 
-        cursor.execute("""
-            SELECT * FROM asignaciones
-            WHERE empleado_id=? AND fecha=?
-        """, (empleado_id, fecha))
+        fecha_inicio = request.form["fecha_inicio"]
+        fecha_fin = request.form["fecha_fin"]
 
-        if not cursor.fetchone():
+        inicio = date.fromisoformat(fecha_inicio)
+        fin = date.fromisoformat(fecha_fin)
+
+        while inicio <= fin:
+
             cursor.execute("""
-                INSERT INTO asignaciones (empleado_id, turno_id, fecha)
-                VALUES (?, ?, ?)
-            """, (empleado_id, turno_id, fecha))
-            conn.commit()
+                SELECT * FROM asignaciones
+                WHERE empleado_id=? AND fecha=?
+            """, (empleado_id, inicio.isoformat()))
+
+            if not cursor.fetchone():
+
+                cursor.execute("""
+                    INSERT INTO asignaciones (empleado_id, turno_id, fecha)
+                    VALUES (?, ?, ?)
+                """, (empleado_id, turno_id, inicio.isoformat()))
+
+            inicio += timedelta(days=1)
+
+        conn.commit()
 
     # Empleados
     cursor.execute("""
@@ -375,9 +375,6 @@ def gestionar_asignaciones():
         asignaciones=asignaciones
     )
 
-
-
-
 @app.route("/admin/asignaciones/eliminar/<int:id>")
 def eliminar_asignacion(id):
 
@@ -394,110 +391,100 @@ def eliminar_asignacion(id):
     return redirect(url_for("gestionar_asignaciones"))
 
 
-# ---------------- DASHBOARD EMPLEADO ----------------
+@app.route("/admin/solicitudes")
+def admin_solicitudes():
+
+    if session.get("rol") != "admin":
+        return redirect("/")
+
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
+
+    solicitudes = conn.execute("""
+        SELECT s.id, u.nombre, s.tipo, s.comentario, s.estado
+        FROM solicitudes s
+        JOIN empleados e ON s.empleado_id = e.id
+        JOIN usuarios u ON e.usuario_id = u.id
+    """).fetchall()
+
+    conn.close()
+
+    return render_template("admin/solicitudes.html", solicitudes=solicitudes)
+
+@app.route("/admin/solicitud/<int:id>/<accion>")
+def gestionar_solicitud(id, accion):
+
+    if session.get("rol") != "admin":
+        return redirect("/")
+
+    conn = sqlite3.connect("database.db")
+
+    if accion == "aprobar":
+        estado = "aprobada"
+    else:
+        estado = "rechazada"
+
+    conn.execute(
+        "UPDATE solicitudes SET estado = ? WHERE id = ?",
+        (estado, id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/admin/solicitudes")
+
+
+@app.route("/admin/calendario")
+def admin_calendario():
+
+    if session.get("rol") != "admin":
+        return redirect(url_for("home"))
+
+    return render_template("admin/calendario.html")
+
+@app.route("/admin/calendario/eventos")
+def calendario_eventos():
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT a.fecha, u.nombre, t.nombre AS turno, t.color
+        FROM asignaciones a
+        JOIN empleados e ON a.empleado_id = e.id
+        JOIN usuarios u ON e.usuario_id = u.id
+        JOIN turnos t ON a.turno_id = t.id
+    """)
+
+    datos = cursor.fetchall()
+    conn.close()
+
+    eventos = []
+
+    for fila in datos:
+        eventos.append({
+            "title": f"{fila['nombre']} - {fila['turno']}",
+            "start": fila["fecha"],
+            "color": fila["color"]
+        })
+
+    return eventos
+
+
+# ---------------- EMPLEADO DASHBOARD ----------------
 
 @app.route("/empleado")
 def empleado_dashboard():
 
-    if "usuario_id" not in session or session.get("rol") != "empleado":
+    if session.get("rol") != "empleado":
         return redirect(url_for("home"))
-
-    return render_template("empleado/dashboard.html", nombre=session["nombre"])
-
-
-@app.route("/empleado/turnos")
-def empleado_turnos():
-    if "usuario_id" not in session or session.get("rol") != "empleado":
-        return redirect(url_for("home"))
-
-    hoy = date.today()
-    inicio = hoy - timedelta(days=hoy.weekday())
-    fin = inicio + timedelta(days=6)
-
-    desde = request.args.get("desde")
-    hasta = request.args.get("hasta")
-
-    if desde:
-        inicio = date.fromisoformat(desde)
-    if hasta:
-        fin = date.fromisoformat(hasta)
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT id FROM empleados WHERE usuario_id = ?", (session["usuario_id"],))
-    emp = cursor.fetchone()
-
-    if emp is None:
-        asignaciones = []
-    else:
-        empleado_id = emp["id"]
-
-        cursor.execute("""
-            SELECT t.nombre AS turno, t.hora_inicio, t.hora_fin, a.fecha
-            FROM asignaciones a
-            JOIN turnos t ON a.turno_id = t.id
-            JOIN empleados e ON a.empleado_id = e.id   
-            WHERE a.empleado_id = ? AND a.fecha BETWEEN ? AND ?
-            ORDER BY a.fecha ASC
-        """, (empleado_id, inicio.isoformat(), fin.isoformat()))
-
-        asignaciones = cursor.fetchall()
-
-    conn.close()
 
     return render_template(
-        'empleado/turnos.html',
-        nombre=session['nombre'],
-        inicio=inicio,
-        fin=fin,
-        asignaciones=asignaciones,
+        "empleado/dashboard.html",
+        nombre=session["nombre"],
         time=int(time())
     )
-
-
-@app.route("/empleado/solicitudes", methods=["GET", "POST"])
-def empleado_solicitudes():
-
-    if "usuario_id" not in session or session.get("rol") != "empleado":
-        return redirect(url_for("home"))
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT id FROM empleados WHERE usuario_id = ?", (session["usuario_id"],))
-    emp = cursor.fetchone()
-
-    if emp is None:
-        conn.close()
-        return redirect(url_for("logout"))
-
-    empleado_id = emp["id"]
-
-    if request.method == "POST":
-        tipo = request.form.get("tipo")
-        comentario = request.form.get("comentario")
-
-        cursor.execute("""
-            INSERT INTO solicitudes (empleado_id, tipo, comentario)
-            VALUES (?, ?, ?)
-        """, (empleado_id, tipo, comentario))
-
-        conn.commit()
-        flash("Solicitud enviada", "success")
-
-    cursor.execute("""
-        SELECT tipo, comentario, estado 
-        FROM solicitudes 
-        WHERE empleado_id = ? ORDER BY id DESC
-    """, (empleado_id,))
-
-    solicitudes = cursor.fetchall()
-    conn.close()
-
-    return render_template("empleado/solicitudes.html", solicitudes=solicitudes)
-
-
 
 @app.route("/empleado/perfil", methods=["GET", "POST"])
 def empleado_perfil():
@@ -536,6 +523,128 @@ def empleado_perfil():
 
 
 
+# ---------------- TURNOS EMPLEADO ----------------
+
+@app.route("/empleado/turnos")
+def empleado_turnos():
+
+    if session.get("rol") != "empleado":
+        return redirect(url_for("home"))
+
+    hoy = date.today()
+
+    inicio = hoy - timedelta(days=hoy.weekday())
+    fin = inicio + timedelta(days=6)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id FROM empleados WHERE usuario_id=?",
+        (session["usuario_id"],)
+    )
+
+    emp = cursor.fetchone()
+
+    if emp:
+
+        turnos = cursor.execute("""
+            SELECT t.nombre,t.hora_inicio,t.hora_fin,a.fecha,t.color
+            FROM asignaciones a
+            JOIN turnos t ON a.turno_id=t.id
+            WHERE a.empleado_id=? AND a.fecha BETWEEN ? AND ?
+            ORDER BY a.fecha
+        """, (emp["id"], inicio.isoformat(), fin.isoformat())).fetchall()
+
+    else:
+        turnos = []
+
+    conn.close()
+
+    return render_template(
+        "empleado/turnos.html",
+        turnos=turnos,
+        inicio=inicio,
+        fin=fin,
+        time=int(time())
+    )
+
+
+# ---------------- SOLICITUDES EMPLEADO ----------------
+
+@app.route("/empleado/solicitudes", methods=["GET", "POST"])
+def empleado_solicitudes():
+
+    if session.get("rol") != "empleado":
+        return redirect(url_for("home"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id FROM empleados WHERE usuario_id=?",
+        (session["usuario_id"],)
+    )
+
+    emp = cursor.fetchone()
+
+    if request.method == "POST":
+
+        tipo = request.form["tipo"]
+        comentario = request.form["comentario"]
+
+        cursor.execute("""
+            INSERT INTO solicitudes (empleado_id,tipo,comentario)
+            VALUES (?,?,?)
+        """, (emp["id"], tipo, comentario))
+
+        conn.commit()
+
+    solicitudes = cursor.execute("""
+        SELECT * FROM solicitudes
+        WHERE empleado_id=?
+        ORDER BY id DESC
+    """, (emp["id"],)).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "empleado/solicitudes.html",
+        solicitudes=solicitudes,
+        time=int(time())
+    )
+
+@app.route("/empleado/solicitar", methods=["GET","POST"])
+def solicitar_permiso():
+
+    if session.get("rol") != "empleado":
+        return redirect("/")
+
+    if request.method == "POST":
+
+        tipo = request.form["tipo"]
+        comentario = request.form["comentario"]
+
+        conn = sqlite3.connect("database.db")
+        conn.row_factory = sqlite3.Row
+
+        empleado = conn.execute("""
+        SELECT id FROM empleados
+        WHERE usuario_id = ?
+        """,(session["usuario_id"],)).fetchone()
+
+        conn.execute("""
+        INSERT INTO solicitudes (empleado_id,tipo,comentario)
+        VALUES (?,?,?)
+        """,(empleado["id"],tipo,comentario))
+
+        conn.commit()
+        conn.close()
+
+        return redirect("/empleado/turnos")
+
+    return render_template("empleado/solicitar.html")
+
 @app.route("/empleado/cambiar-password", methods=["GET", "POST"])
 def empleado_cambiar_password():
 
@@ -569,7 +678,83 @@ def empleado_cambiar_password():
 
     return render_template("empleado/cambiar_password.html")
 
+@app.route("/empleado/calendario")
+def empleado_calendario():
 
+    if session.get("rol") != "empleado":
+        return redirect(url_for("home"))
+
+    return render_template("empleado/calendario.html")
+
+@app.route("/empleado/calendario/eventos")
+def empleado_calendario_eventos():
+
+    if session.get("rol") != "empleado":
+        return []
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT id FROM empleados WHERE usuario_id=?",
+        (session["usuario_id"],)
+    )
+
+    empleado = cursor.fetchone()
+
+    eventos = []
+
+    if empleado:
+
+        # TURNOS
+        cursor.execute("""
+            SELECT a.fecha, t.nombre, t.hora_inicio, t.hora_fin, t.color
+            FROM asignaciones a
+            JOIN turnos t ON a.turno_id = t.id
+            WHERE a.empleado_id=?
+        """, (empleado["id"],))
+
+        for t in cursor.fetchall():
+
+            eventos.append({
+                "title": f"{t['nombre']} {t['hora_inicio']}-{t['hora_fin']}",
+                "start": t["fecha"],
+                "color": t["color"]
+            })
+
+        # VACACIONES
+        cursor.execute("""
+            SELECT fecha_inicio, fecha_fin, tipo
+            FROM vacaciones
+            WHERE empleado_id=? AND estado='aprobada'
+        """, (empleado["id"],))
+
+        for v in cursor.fetchall():
+
+            eventos.append({
+                "title": v["tipo"],
+                "start": v["fecha_inicio"],
+                "end": v["fecha_fin"],
+                "color": "#2ecc71"
+            })
+
+        # SOLICITUDES (ASUNTOS PROPIOS)
+        cursor.execute("""
+            SELECT tipo
+            FROM solicitudes
+            WHERE empleado_id=? AND estado='aprobada'
+        """, (empleado["id"],))
+
+        for s in cursor.fetchall():
+
+            eventos.append({
+                "title": s["tipo"],
+                "color": "#f39c12"
+            })
+
+    conn.close()
+
+    return eventos
 # ---------------- LOGOUT ----------------
 
 @app.route("/logout")
