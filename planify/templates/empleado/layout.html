@@ -19,7 +19,9 @@
     <nav class="empleado-nav">
         <a href="{{ url_for('empleado_dashboard') }}">Inicio</a>
         <a href="{{ url_for('empleado_turnos') }}">Mis turnos</a>
+        <a href="{{ url_for('empleado_calendario') }}">Mi calendario</a>
         <a href="{{ url_for('empleado_solicitudes') }}">Solicitudes</a>
+        <a href="/empleado/solicitar">Solicitar permiso</a>
         <a href="{{ url_for('empleado_perfil') }}">Mi perfil</a>
         <a href="{{ url_for('empleado_cambiar_password') }}">Contraseña</a>
         <a href="{{ url_for('logout') }}">Salir</a>

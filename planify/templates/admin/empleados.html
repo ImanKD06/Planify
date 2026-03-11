@@ -18,6 +18,7 @@
         <td>{{ empleado.email }}</td>
         <td>{{ empleado.puesto }}</td>
         <td class="action-links">
+            <a href="{{ url_for('admin_calendario') }}">Ver calendario de trabajo</a>
             <a href="{{ url_for('editar_empleado', id=empleado.id) }}">Editar</a>
             <a href="{{ url_for('eliminar_empleado', id=empleado.id) }}">Eliminar</a>
         </td>

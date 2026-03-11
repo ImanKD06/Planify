@@ -1,0 +1,38 @@
+{% extends "empleado/layout.html" %}
+
+{% block content %}
+
+<div class="solicitud-card">
+
+<h2>Solicitar permiso</h2>
+
+<form method="POST">
+
+<div class="form-group">
+<label>Tipo de solicitud</label>
+
+<select name="tipo" required>
+
+<option value="vacaciones">Vacaciones</option>
+
+<option value="dia_libre">Día libre</option>
+
+<option value="asuntos_propios">Asuntos propios</option>
+
+</select>
+</div>
+
+
+<div class="form-group">
+<label>Comentario</label>
+
+<textarea name="comentario" placeholder="Explica tu solicitud"></textarea>
+</div>
+
+<button type="submit">Enviar solicitud</button>
+
+</form>
+
+</div>
+
+{% endblock %}

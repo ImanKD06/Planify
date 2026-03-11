@@ -1,0 +1,40 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+
+<h2>Solicitudes de empleados</h2>
+
+<table class="tabla">
+    <thead>
+        <tr>
+            <th>Empleado</th>
+            <th>Tipo</th>
+            <th>Comentario</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for s in solicitudes %}
+        <tr>
+            <td>{{ s.nombre }}</td>
+            <td>{{ s.tipo }}</td>
+            <td>{{ s.comentario }}</td>
+            <td>{{ s.estado }}</td>
+
+            <td>
+                <a class="btn-aprobar" href="/admin/solicitud/{{ s.id }}/aprobar">
+                    Aprobar
+                </a>
+
+                <a class="btn-rechazar" href="/admin/solicitud/{{ s.id }}/rechazar">
+                    Rechazar
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
