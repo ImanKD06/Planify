@@ -28,12 +28,14 @@ def init_db():
     """)
 
     # ---------------- TABLA TURNOS ----------------
+    # Se añade color para calendario visual
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS turnos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
         hora_inicio TEXT NOT NULL,
-        hora_fin TEXT NOT NULL
+        hora_fin TEXT NOT NULL,
+        color TEXT DEFAULT '#3788d8'
     )
     """)
 
@@ -49,6 +51,12 @@ def init_db():
     )
     """)
 
+    # Evita asignar 2 turnos al mismo empleado el mismo día
+    cursor.execute("""
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_asignacion_unica
+    ON asignaciones(empleado_id, fecha)
+    """)
+
     # ---------------- TABLA SOLICITUDES ----------------
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS solicitudes (
@@ -62,10 +70,24 @@ def init_db():
     )
     """)
 
+    # ---------------- TABLA VACACIONES ----------------
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS vacaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        empleado_id INTEGER NOT NULL,
+        fecha_inicio TEXT NOT NULL,
+        fecha_fin TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        estado TEXT DEFAULT 'pendiente'
+            CHECK (estado IN ('pendiente', 'aprobada', 'rechazada')),
+        FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
+    )
+    """)
+
     conn.commit()
     conn.close()
-    print(" Base de datos SQLite creada correctamente.")
+
+    print("Base de datos SQLite creada correctamente.")
 
 if __name__ == "__main__":
-
     init_db()
