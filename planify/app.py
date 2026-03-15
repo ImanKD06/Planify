@@ -17,6 +17,80 @@ def get_db_connection():
     return conn
 
 
+# ---------------- CREAR TABLAS ----------------
+
+def crear_tablas():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        rol TEXT NOT NULL,
+        primer_login INTEGER DEFAULT 1
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS empleados (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario_id INTEGER NOT NULL,
+        puesto TEXT,
+        FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS turnos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        hora_inicio TEXT NOT NULL,
+        hora_fin TEXT NOT NULL,
+        color TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS asignaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        empleado_id INTEGER NOT NULL,
+        turno_id INTEGER NOT NULL,
+        fecha TEXT NOT NULL,
+        FOREIGN KEY(empleado_id) REFERENCES empleados(id) ON DELETE CASCADE,
+        FOREIGN KEY(turno_id) REFERENCES turnos(id) ON DELETE CASCADE
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS solicitudes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        empleado_id INTEGER NOT NULL,
+        tipo TEXT NOT NULL,
+        comentario TEXT,
+        estado TEXT DEFAULT 'pendiente',
+        FOREIGN KEY(empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS vacaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        empleado_id INTEGER NOT NULL,
+        fecha_inicio TEXT NOT NULL,
+        fecha_fin TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        estado TEXT DEFAULT 'pendiente',
+        FOREIGN KEY(empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
 # ---------------- CREAR ADMIN INICIAL ----------------
 
 def crear_admin_inicial():
@@ -810,6 +884,8 @@ def empleado_calendario_eventos():
     conn.close()
 
     return eventos
+
+
 # ---------------- LOGOUT ----------------
 
 @app.route("/logout")
@@ -820,6 +896,9 @@ def logout():
 
 # ---------------- RUN APP ----------------
 
+# Esto se ejecuta tanto con "python app.py" como con Gunicorn en Render
+crear_tablas()
+crear_admin_inicial()
+
 if __name__ == "__main__":
-    crear_admin_inicial()
     app.run(debug=True)
