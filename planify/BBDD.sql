@@ -1,52 +1,46 @@
--- Crear base de datos
-CREATE DATABASE planify;
-USE planify;
-
 -- Tabla usuarios
 CREATE TABLE usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    rol ENUM('admin', 'empleado') NOT NULL
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    rol TEXT NOT NULL,
+    primer_login INTEGER DEFAULT 1
 );
 
 -- Tabla empleados
 CREATE TABLE empleados (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    puesto VARCHAR(100),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-        ON DELETE CASCADE
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id INTEGER NOT NULL,
+    puesto TEXT,
+    FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
 -- Tabla turnos
 CREATE TABLE turnos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    hora_inicio TIME NOT NULL,
-    hora_fin TIME NOT NULL
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    hora_inicio TEXT NOT NULL,
+    hora_fin TEXT NOT NULL,
+    color TEXT
 );
 
 -- Tabla asignaciones
 CREATE TABLE asignaciones (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    empleado_id INT NOT NULL,
-    turno_id INT NOT NULL,
-    fecha DATE NOT NULL,
-    FOREIGN KEY (empleado_id) REFERENCES empleados(id)
-        ON DELETE CASCADE,
-    FOREIGN KEY (turno_id) REFERENCES turnos(id)
-        ON DELETE CASCADE
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    empleado_id INTEGER NOT NULL,
+    turno_id INTEGER NOT NULL,
+    fecha TEXT NOT NULL,
+    FOREIGN KEY(empleado_id) REFERENCES empleados(id) ON DELETE CASCADE,
+    FOREIGN KEY(turno_id) REFERENCES turnos(id) ON DELETE CASCADE
 );
 
 -- Tabla solicitudes
 CREATE TABLE solicitudes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    empleado_id INT NOT NULL,
-    tipo VARCHAR(50) NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    empleado_id INTEGER NOT NULL,
+    tipo TEXT NOT NULL,
     comentario TEXT,
-    estado ENUM('pendiente', 'aprobada', 'rechazada') DEFAULT 'pendiente',
-    FOREIGN KEY (empleado_id) REFERENCES empleados(id)
-        ON DELETE CASCADE
+    estado TEXT DEFAULT 'pendiente',
+    FOREIGN KEY(empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
 );
