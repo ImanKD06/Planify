@@ -104,33 +104,45 @@ def home():
         return login()
     return render_template("login.html")
 
-
 @app.route("/login", methods=["POST"])
 def login():
     try:
         email = request.form.get("email")
         password = request.form.get("password")
+
         if not email or not password:
             flash("Todos los campos son obligatorios", "error")
             return redirect(url_for("home"))
+
         conn = get_db_connection()
-        usuario = conn.execute("SELECT * FROM usuarios WHERE email=?", (email,)).fetchone()
+        usuario = conn.execute(
+            "SELECT * FROM usuarios WHERE email=?",
+            (email,)
+        ).fetchone()
         conn.close()
+
         if usuario and check_password_hash(usuario["password"], password):
             session.clear()
             session["usuario_id"] = usuario["id"]
             session["rol"] = usuario["rol"]
             session["nombre"] = usuario["nombre"]
+
             if usuario["primer_login"] == 1:
                 return redirect(url_for("cambiar_password"))
+
             if usuario["rol"] == "admin":
                 return redirect(url_for("listar_empleados"))
+
             return redirect(url_for("empleado_dashboard"))
+
         flash("Email o contraseña incorrectos", "error")
         return redirect(url_for("home"))
+
     except Exception as e:
+        # Imprime en consola para Render logs
         print("ERROR LOGIN:", e)
-        flash(f"Ocurrió un error al iniciar sesión: {e}", "error")
+        # Muestra el error directamente al usuario en la web
+        flash(f"Error interno al iniciar sesión: {e}", "error")
         return redirect(url_for("home"))
 
 
