@@ -782,7 +782,9 @@ def not_found(e):
 
 # ---------------- RUN APP ----------------
 
-if __name__ == "__main__":
+with app.app_context():
     crear_tablas()
     crear_admin_inicial()
+
+if __name__ == '__main__':
     app.run(debug=True)
