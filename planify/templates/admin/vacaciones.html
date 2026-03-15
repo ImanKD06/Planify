@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Vacaciones</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+
+<body>
+
+<div class="container">
+
+<h2>Asignar vacaciones</h2>
+
+<form method="POST">
+
+<label>Empleado</label>
+<select name="empleado_id">
+
+{% for e in empleados %}
+<option value="{{ e.id }}">{{ e.nombre }}</option>
+{% endfor %}
+
+</select>
+
+<label>Tipo</label>
+<select name="tipo">
+
+<option value="Vacaciones">Vacaciones</option>
+<option value="Asuntos propios">Asuntos propios</option>
+
+</select>
+
+<label>Fecha inicio</label>
+<input type="date" name="fecha_inicio">
+
+<label>Fecha fin</label>
+<input type="date" name="fecha_fin">
+
+<button type="submit">Guardar</button>
+
+</form>
+
+<h3>Vacaciones registradas</h3>
+
+<table>
+
+<tr>
+<th>Empleado</th>
+<th>Inicio</th>
+<th>Fin</th>
+<th>Tipo</th>
+</tr>
+
+{% for v in vacaciones %}
+
+<tr>
+<td>{{ v.nombre }}</td>
+<td>{{ v.fecha_inicio }}</td>
+<td>{{ v.fecha_fin }}</td>
+<td>{{ v.tipo }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+</body>
+</html>
