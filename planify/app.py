@@ -7,7 +7,7 @@ from time import time
 app = Flask(__name__)
 app.secret_key = "super_secret_key"
 
-DB_PATH = "database.db"  # Ruta del archivo SQLite
+DB_PATH = "database.db"
 
 
 # ---------------- CONEXIÓN BD ----------------
@@ -18,12 +18,11 @@ def get_db_connection():
     return conn
 
 
-# ---------------- CREAR TABLAS SI NO EXISTEN ----------------
+# ---------------- CREAR TABLAS ----------------
 def crear_tablas():
     if not os.path.exists(DB_PATH):
         conn = get_db_connection()
         cursor = conn.cursor()
-
         cursor.execute("""
         CREATE TABLE usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,7 +33,6 @@ def crear_tablas():
             primer_login INTEGER DEFAULT 1
         )
         """)
-
         cursor.execute("""
         CREATE TABLE empleados (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +41,6 @@ def crear_tablas():
             FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
         )
         """)
-
         cursor.execute("""
         CREATE TABLE turnos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +50,6 @@ def crear_tablas():
             color TEXT
         )
         """)
-
         cursor.execute("""
         CREATE TABLE asignaciones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,7 +60,6 @@ def crear_tablas():
             FOREIGN KEY(turno_id) REFERENCES turnos(id) ON DELETE CASCADE
         )
         """)
-
         cursor.execute("""
         CREATE TABLE solicitudes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,35 +70,31 @@ def crear_tablas():
             FOREIGN KEY(empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
         )
         """)
-
         conn.commit()
         conn.close()
 
 
 # ---------------- CREAR ADMIN INICIAL ----------------
 def crear_admin_inicial():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM usuarios WHERE rol='admin'")
-    admin = cursor.fetchone()
-
-    if not admin:
-        password_temporal = "Admin123!"
-        password_hash = generate_password_hash(password_temporal)
-
-        cursor.execute("""
-            INSERT INTO usuarios (nombre, email, password, rol, primer_login)
-            VALUES (?, ?, ?, ?, 1)
-        """, ("Admin", "admin@empresa.com", password_hash, "admin"))
-
-        conn.commit()
-
-        print("Admin inicial creado")
-        print("Email: admin@empresa.com")
-        print("Password:", password_temporal)
-
-    conn.close()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM usuarios WHERE rol='admin'")
+        admin = cursor.fetchone()
+        if not admin:
+            password_temporal = "Admin123!"
+            password_hash = generate_password_hash(password_temporal)
+            cursor.execute("""
+                INSERT INTO usuarios (nombre, email, password, rol, primer_login)
+                VALUES (?, ?, ?, ?, 1)
+            """, ("Admin", "admin@empresa.com", password_hash, "admin"))
+            conn.commit()
+            print("Admin inicial creado")
+            print("Email: admin@empresa.com")
+            print("Password:", password_temporal)
+        conn.close()
+    except Exception as e:
+        print("ERROR crear_admin_inicial:", e)
 
 
 # ---------------- LOGIN ----------------
@@ -116,57 +107,53 @@ def home():
 
 @app.route("/login", methods=["POST"])
 def login():
-    email = request.form.get("email")
-    password = request.form.get("password")
-
-    if not email or not password:
-        flash("Todos los campos son obligatorios", "error")
+    try:
+        email = request.form.get("email")
+        password = request.form.get("password")
+        if not email or not password:
+            flash("Todos los campos son obligatorios", "error")
+            return redirect(url_for("home"))
+        conn = get_db_connection()
+        usuario = conn.execute("SELECT * FROM usuarios WHERE email=?", (email,)).fetchone()
+        conn.close()
+        if usuario and check_password_hash(usuario["password"], password):
+            session.clear()
+            session["usuario_id"] = usuario["id"]
+            session["rol"] = usuario["rol"]
+            session["nombre"] = usuario["nombre"]
+            if usuario["primer_login"] == 1:
+                return redirect(url_for("cambiar_password"))
+            if usuario["rol"] == "admin":
+                return redirect(url_for("listar_empleados"))
+            return redirect(url_for("empleado_dashboard"))
+        flash("Email o contraseña incorrectos", "error")
         return redirect(url_for("home"))
-
-    conn = get_db_connection()
-    usuario = conn.execute(
-        "SELECT * FROM usuarios WHERE email=?",
-        (email,)
-    ).fetchone()
-    conn.close()
-
-    if usuario and check_password_hash(usuario["password"], password):
-        session.clear()
-        session["usuario_id"] = usuario["id"]
-        session["rol"] = usuario["rol"]
-        session["nombre"] = usuario["nombre"]
-
-        if usuario["primer_login"] == 1:
-            return redirect(url_for("cambiar_password"))
-
-        if usuario["rol"] == "admin":
-            return redirect(url_for("listar_empleados"))
-
-        return redirect(url_for("empleado_dashboard"))
-
-    flash("Email o contraseña incorrectos", "error")
-    return redirect(url_for("home"))
+    except Exception as e:
+        print("ERROR LOGIN:", e)
+        flash(f"Ocurrió un error al iniciar sesión: {e}", "error")
+        return redirect(url_for("home"))
 
 
 # ---------------- CAMBIAR PASSWORD ----------------
 @app.route("/cambiar-password", methods=["GET", "POST"])
 def cambiar_password():
-    if "usuario_id" not in session:
+    try:
+        if "usuario_id" not in session:
+            return redirect(url_for("home"))
+        if request.method == "POST":
+            nueva = generate_password_hash(request.form["password"])
+            conn = get_db_connection()
+            conn.execute("UPDATE usuarios SET password=?, primer_login=0 WHERE id=?",
+                         (nueva, session["usuario_id"]))
+            conn.commit()
+            conn.close()
+            flash("Contraseña actualizada correctamente", "success")
+            return redirect(url_for("home"))
+        return render_template("cambiar_password.html")
+    except Exception as e:
+        print("ERROR cambiar_password:", e)
+        flash(f"Error al cambiar contraseña: {e}", "error")
         return redirect(url_for("home"))
-
-    if request.method == "POST":
-        nueva = generate_password_hash(request.form["password"])
-        conn = get_db_connection()
-        conn.execute("""
-            UPDATE usuarios
-            SET password=?, primer_login=0
-            WHERE id=?
-        """, (nueva, session["usuario_id"]))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("home"))
-
-    return render_template("cambiar_password.html")
 
 
 # ---------------- LOGOUT ----------------
@@ -176,22 +163,21 @@ def logout():
     return redirect(url_for("home"))
 
 
-# ---------------- EJEMPLO DE RUTAS ADMIN Y EMPLEADO ----------------
-# Aquí podrías copiar todas las rutas que ya tenías,
-# cambiando solo la conexión a `get_db_connection()`
-# y asegurándote que no haya SQL incompatible con SQLite.
-
-# Por ejemplo:
+# ---------------- EJEMPLO DE DASHBOARD EMPLEADO ----------------
 @app.route("/empleado")
 def empleado_dashboard():
-    if session.get("rol") != "empleado":
+    try:
+        if session.get("rol") != "empleado":
+            return redirect(url_for("home"))
+        return render_template(
+            "empleado/dashboard.html",
+            nombre=session["nombre"],
+            time=int(time())
+        )
+    except Exception as e:
+        print("ERROR empleado_dashboard:", e)
+        flash(f"Error al cargar dashboard: {e}", "error")
         return redirect(url_for("home"))
-
-    return render_template(
-        "empleado/dashboard.html",
-        nombre=session["nombre"],
-        time=int(time())
-    )
 
 
 # ---------------- INICIAR APP ----------------
