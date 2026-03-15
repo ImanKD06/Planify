@@ -1,4 +1,7 @@
 @font-face {
-    font-family:'logo';
-    src: url(../fonts/Nordhin-Italic.otf);
+  font-family: 'Nordhin';
+  src: url('/static/fonts/Nordhin.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
