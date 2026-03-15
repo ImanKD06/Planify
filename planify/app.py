@@ -17,87 +17,6 @@ def get_db_connection():
     return conn
 
 
-# ---------------- INICIALIZAR BD ----------------
-
-def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            primer_login INTEGER DEFAULT 1,
-            nombre TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            rol TEXT NOT NULL CHECK (rol IN ('admin', 'empleado'))
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS empleados (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            usuario_id INTEGER NOT NULL UNIQUE,
-            puesto TEXT,
-            FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS turnos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            hora_inicio TEXT NOT NULL,
-            hora_fin TEXT NOT NULL,
-            color TEXT DEFAULT '#3788d8'
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS asignaciones (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            empleado_id INTEGER NOT NULL,
-            turno_id INTEGER NOT NULL,
-            fecha TEXT NOT NULL,
-            FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE,
-            FOREIGN KEY (turno_id) REFERENCES turnos(id) ON DELETE CASCADE
-        )
-    """)
-
-    cursor.execute("""
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_asignacion_unica
-        ON asignaciones(empleado_id, fecha)
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS solicitudes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            empleado_id INTEGER NOT NULL,
-            tipo TEXT NOT NULL,
-            comentario TEXT,
-            estado TEXT DEFAULT 'pendiente'
-                CHECK (estado IN ('pendiente', 'aprobada', 'rechazada')),
-            FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS vacaciones (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            empleado_id INTEGER NOT NULL,
-            fecha_inicio TEXT NOT NULL,
-            fecha_fin TEXT NOT NULL,
-            tipo TEXT NOT NULL,
-            estado TEXT DEFAULT 'pendiente'
-                CHECK (estado IN ('pendiente', 'aprobada', 'rechazada')),
-            FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE
-        )
-    """)
-
-    conn.commit()
-    conn.close()
-
-
 # ---------------- CREAR ADMIN INICIAL ----------------
 
 def crear_admin_inicial():
@@ -108,6 +27,7 @@ def crear_admin_inicial():
     admin = cursor.fetchone()
 
     if not admin:
+
         password_temporal = "Admin123!"
         password_hash = generate_password_hash(password_temporal)
 
@@ -123,11 +43,6 @@ def crear_admin_inicial():
         print("Password:", password_temporal)
 
     conn.close()
-
-
-# ← ESTO ES LO CLAVE: se ejecuta al importar el módulo (funciona en Gunicorn/Render)
-init_db()
-crear_admin_inicial()
 
 
 # ---------------- LOGIN ----------------
@@ -271,7 +186,6 @@ def crear_empleado():
 
     return render_template("admin/crear_empleado.html")
 
-
 # ---------------- EDITAR EMPLEADO ----------------
 
 @app.route("/admin/empleados/editar/<int:id>", methods=["GET", "POST"])
@@ -368,10 +282,8 @@ def gestionar_turnos():
 
     return render_template("admin/turnos.html", turnos=turnos)
 
-
 @app.route("/admin/turnos/eliminar/<int:id>", methods=["POST"])
 def eliminar_turno(id):
-
     if session.get("rol") != "admin":
         return redirect(url_for("home"))
 
@@ -383,6 +295,7 @@ def eliminar_turno(id):
     conn.close()
 
     return redirect(url_for("gestionar_turnos"))
+
 
 
 # ---------------- ASIGNACIONES ----------------
@@ -425,6 +338,7 @@ def gestionar_asignaciones():
 
         conn.commit()
 
+    # Empleados
     cursor.execute("""
         SELECT e.id, u.nombre
         FROM empleados e
@@ -432,9 +346,11 @@ def gestionar_asignaciones():
     """)
     empleados = cursor.fetchall()
 
+    # Turnos
     cursor.execute("SELECT * FROM turnos")
     turnos = cursor.fetchall()
 
+    # Semana actual
     hoy = date.today()
     inicio = hoy - timedelta(days=hoy.weekday())
     fin = inicio + timedelta(days=6)
@@ -459,7 +375,6 @@ def gestionar_asignaciones():
         asignaciones=asignaciones
     )
 
-
 @app.route("/admin/asignaciones/eliminar/<int:id>")
 def eliminar_asignacion(id):
 
@@ -482,7 +397,8 @@ def admin_solicitudes():
     if session.get("rol") != "admin":
         return redirect("/")
 
-    conn = get_db_connection()
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
 
     solicitudes = conn.execute("""
         SELECT s.id, u.nombre, s.tipo, s.comentario, s.estado
@@ -495,16 +411,18 @@ def admin_solicitudes():
 
     return render_template("admin/solicitudes.html", solicitudes=solicitudes)
 
-
 @app.route("/admin/solicitud/<int:id>/<accion>")
 def gestionar_solicitud(id, accion):
 
     if session.get("rol") != "admin":
         return redirect("/")
 
-    conn = get_db_connection()
+    conn = sqlite3.connect("database.db")
 
-    estado = "aprobada" if accion == "aprobar" else "rechazada"
+    if accion == "aprobar":
+        estado = "aprobada"
+    else:
+        estado = "rechazada"
 
     conn.execute(
         "UPDATE solicitudes SET estado = ? WHERE id = ?",
@@ -517,6 +435,58 @@ def gestionar_solicitud(id, accion):
     return redirect("/admin/solicitudes")
 
 
+@app.route("/admin/vacaciones", methods=["GET", "POST"])
+def admin_vacaciones():
+
+    if session.get("rol") != "admin":
+        return redirect(url_for("home"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if request.method == "POST":
+
+        empleado_id = request.form["empleado_id"]
+        fecha_inicio = request.form["fecha_inicio"]
+        fecha_fin = request.form["fecha_fin"]
+        tipo = request.form["tipo"]
+
+        cursor.execute("""
+            INSERT INTO vacaciones (empleado_id,fecha_inicio,fecha_fin,tipo,estado)
+            VALUES (?,?,?,?, 'aprobada')
+        """, (empleado_id, fecha_inicio, fecha_fin, tipo))
+
+        conn.commit()
+
+    # lista empleados
+    cursor.execute("""
+        SELECT e.id, u.nombre
+        FROM empleados e
+        JOIN usuarios u ON e.usuario_id = u.id
+    """)
+
+    empleados = cursor.fetchall()
+
+    # lista vacaciones
+    cursor.execute("""
+        SELECT v.id, u.nombre, v.fecha_inicio, v.fecha_fin, v.tipo
+        FROM vacaciones v
+        JOIN empleados e ON v.empleado_id = e.id
+        JOIN usuarios u ON e.usuario_id = u.id
+        ORDER BY v.fecha_inicio DESC
+    """)
+
+    vacaciones = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "admin/vacaciones.html",
+        empleados=empleados,
+        vacaciones=vacaciones
+    )
+
+
 @app.route("/admin/calendario")
 def admin_calendario():
 
@@ -524,7 +494,6 @@ def admin_calendario():
         return redirect(url_for("home"))
 
     return render_template("admin/calendario.html")
-
 
 @app.route("/admin/calendario/eventos")
 def calendario_eventos():
@@ -555,6 +524,7 @@ def calendario_eventos():
     return eventos
 
 
+
 # ---------------- EMPLEADO DASHBOARD ----------------
 
 @app.route("/empleado")
@@ -568,7 +538,6 @@ def empleado_dashboard():
         nombre=session["nombre"],
         time=int(time())
     )
-
 
 @app.route("/empleado/perfil", methods=["GET", "POST"])
 def empleado_perfil():
@@ -606,6 +575,7 @@ def empleado_perfil():
     return render_template("empleado/perfil.html", usuario=usuario, empleado=empleado)
 
 
+
 # ---------------- TURNOS EMPLEADO ----------------
 
 @app.route("/empleado/turnos")
@@ -630,6 +600,7 @@ def empleado_turnos():
     emp = cursor.fetchone()
 
     if emp:
+
         turnos = cursor.execute("""
             SELECT t.nombre,t.hora_inicio,t.hora_fin,a.fecha,t.color
             FROM asignaciones a
@@ -637,6 +608,7 @@ def empleado_turnos():
             WHERE a.empleado_id=? AND a.fecha BETWEEN ? AND ?
             ORDER BY a.fecha
         """, (emp["id"], inicio.isoformat(), fin.isoformat())).fetchall()
+
     else:
         turnos = []
 
@@ -695,8 +667,7 @@ def empleado_solicitudes():
         time=int(time())
     )
 
-
-@app.route("/empleado/solicitar", methods=["GET", "POST"])
+@app.route("/empleado/solicitar", methods=["GET","POST"])
 def solicitar_permiso():
 
     if session.get("rol") != "empleado":
@@ -707,17 +678,18 @@ def solicitar_permiso():
         tipo = request.form["tipo"]
         comentario = request.form["comentario"]
 
-        conn = get_db_connection()
+        conn = sqlite3.connect("database.db")
+        conn.row_factory = sqlite3.Row
 
         empleado = conn.execute("""
-            SELECT id FROM empleados
-            WHERE usuario_id = ?
-        """, (session["usuario_id"],)).fetchone()
+        SELECT id FROM empleados
+        WHERE usuario_id = ?
+        """,(session["usuario_id"],)).fetchone()
 
         conn.execute("""
-            INSERT INTO solicitudes (empleado_id,tipo,comentario)
-            VALUES (?,?,?)
-        """, (empleado["id"], tipo, comentario))
+        INSERT INTO solicitudes (empleado_id,tipo,comentario)
+        VALUES (?,?,?)
+        """,(empleado["id"],tipo,comentario))
 
         conn.commit()
         conn.close()
@@ -725,6 +697,7 @@ def solicitar_permiso():
         return redirect("/empleado/turnos")
 
     return render_template("empleado/solicitar.html")
+
 
 
 @app.route("/empleado/cambiar-password", methods=["GET", "POST"])
@@ -747,8 +720,8 @@ def empleado_cambiar_password():
         cursor = conn.cursor()
 
         cursor.execute("""
-            UPDATE usuarios
-            SET password=?, primer_login=0
+            UPDATE usuarios 
+            SET password=?, primer_login=0 
             WHERE id=?
         """, (nueva, session["usuario_id"]))
 
@@ -760,7 +733,6 @@ def empleado_cambiar_password():
 
     return render_template("empleado/cambiar_password.html")
 
-
 @app.route("/empleado/calendario")
 def empleado_calendario():
 
@@ -768,7 +740,6 @@ def empleado_calendario():
         return redirect(url_for("home"))
 
     return render_template("empleado/calendario.html")
-
 
 @app.route("/empleado/calendario/eventos")
 def empleado_calendario_eventos():
@@ -790,6 +761,7 @@ def empleado_calendario_eventos():
 
     if empleado:
 
+        # TURNOS
         cursor.execute("""
             SELECT a.fecha, t.nombre, t.hora_inicio, t.hora_fin, t.color
             FROM asignaciones a
@@ -798,12 +770,14 @@ def empleado_calendario_eventos():
         """, (empleado["id"],))
 
         for t in cursor.fetchall():
+
             eventos.append({
                 "title": f"{t['nombre']} {t['hora_inicio']}-{t['hora_fin']}",
                 "start": t["fecha"],
                 "color": t["color"]
             })
 
+        # VACACIONES
         cursor.execute("""
             SELECT fecha_inicio, fecha_fin, tipo
             FROM vacaciones
@@ -811,6 +785,7 @@ def empleado_calendario_eventos():
         """, (empleado["id"],))
 
         for v in cursor.fetchall():
+
             eventos.append({
                 "title": v["tipo"],
                 "start": v["fecha_inicio"],
@@ -818,6 +793,7 @@ def empleado_calendario_eventos():
                 "color": "#2ecc71"
             })
 
+        # SOLICITUDES (ASUNTOS PROPIOS)
         cursor.execute("""
             SELECT tipo
             FROM solicitudes
@@ -825,6 +801,7 @@ def empleado_calendario_eventos():
         """, (empleado["id"],))
 
         for s in cursor.fetchall():
+
             eventos.append({
                 "title": s["tipo"],
                 "color": "#f39c12"
@@ -833,8 +810,6 @@ def empleado_calendario_eventos():
     conn.close()
 
     return eventos
-
-
 # ---------------- LOGOUT ----------------
 
 @app.route("/logout")
@@ -846,4 +821,5 @@ def logout():
 # ---------------- RUN APP ----------------
 
 if __name__ == "__main__":
+    crear_admin_inicial()
     app.run(debug=True)
