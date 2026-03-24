@@ -1,40 +1,81 @@
 {% extends "admin/layout.html" %}
 {% block content %}
 
+<select id="languageSwitcher" style="margin-bottom: 20px;">
+  <option value="es">Español</option>
+  <option value="en">English</option>
+</select>
+
 <div class="crear-empleado-card">
-    <h2>Crear nuevo empleado</h2>
+    <h2 data-key="Crear nuevo empleado">Crear nuevo empleado</h2>
 
     <form method="POST">
         <div class="form-row">
             <div class="form-group">
-                <label>Nombre</label>
+                <label data-key="Nombre">Nombre</label>
                 <input type="text" name="nombre" required>
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label>Email</label>
+                <label data-key="Email">Email</label>
                 <input type="email" name="email" required>
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label>Contraseña</label>
+                <label data-key="Contraseña">Contraseña</label>
                 <input type="password" name="password" required>
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label>Puesto</label>
+                <label data-key="Puesto">Puesto</label>
                 <input type="text" name="puesto" required>
             </div>
         </div>
 
-        <button type="submit">Crear empleado</button>
+        <button type="submit" data-key="Crear empleado">Crear empleado</button>
     </form>
 </div>
+
+<script>
+// Diccionario de traducciones
+const translations = {
+  "es": {
+    "Crear nuevo empleado": "Crear nuevo empleado",
+    "Nombre": "Nombre",
+    "Email": "Email",
+    "Contraseña": "Contraseña",
+    "Puesto": "Puesto",
+    "Crear empleado": "Crear empleado"
+  },
+  "en": {
+    "Crear nuevo empleado": "Create new employee",
+    "Nombre": "Name",
+    "Email": "Email",
+    "Contraseña": "Password",
+    "Puesto": "Position",
+    "Crear empleado": "Create employee"
+  }
+};
+
+function changeLanguage(lang) {
+    document.querySelectorAll("[data-key]").forEach(el => {
+        const key = el.getAttribute("data-key");
+        el.textContent = translations[lang][key];
+    });
+}
+
+document.getElementById("languageSwitcher").addEventListener("change", function () {
+    changeLanguage(this.value);
+});
+
+// Cargar español por defecto
+changeLanguage("es");
+</script>
 
 {% endblock %}
